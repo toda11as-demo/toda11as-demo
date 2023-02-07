@@ -9,4 +9,4 @@ Repo: ${REPO_URL}"
 
 echo $DAILY_MESSAGE
 # 슬랙 채널로 메시지 요청
-curl -X POST --data-urlencode "payload={\"channel\": \"#test-for-github-action\", \"username\": \"Alert Manager\", \"text\": \"${DAILY_MESSAGE}\", \"icon_emoji\": \":seal:\"}" $SLACK_WEBHOOK_URL
+curl -X POST --data-urlencode "payload={\"channel\": \"#team2_배포상태알림\", \"username\": \"Alert Manager\", \"text\": \"${DAILY_MESSAGE}\", \"icon_emoji\": \":seal:\"}" $SLACK_WEBHOOK_URL
