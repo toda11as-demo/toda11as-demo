@@ -1,5 +1,5 @@
 #변경해야 될 부분이 있습니다. ctrl+f로 "변경"을 찾아보세요.
-name: Alert Deploy Status
+name: Alert Deploy Status & Release Tag
 
 on:
   pull_request:
@@ -91,10 +91,25 @@ jobs:
 
           chmod +x tools/alertSuccess.sh
           tools/alertSuccess.sh "$SLACK_WEBHOOK_URL" ${GITHUB_REPO_URL} "${{ steps.pr_info.outputs.pull_request_title }}"
-
-      # # Update README file
-      # - name: Update README.md
-      #   shell: bash
-      #   run: |
-      #     chmod +x updateReadme.sh
-      #     ./updateReadme.sh
+  
+  ## below code is from .github/releaseAction.yml
+  ## name: Release Tag
+  ## only runs when alert_deploy_success job is done
+  build:
+    runs-on: ubuntu-latest
+    needs: alert_deploy_success
+    if: ${{ success() }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: 버전 정보 추출
+      run: echo "##[set-output name=version;]$(echo '${{ github.event.head_commit.message }}' | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')"
+      id: extract_version_name   
+          
+    - name: Release 생성 
+      uses: actions/create-release@v1
+      env: 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with: 
+        tag_name: ${{ steps.extract_version_name.outputs.version }} 
+        release_name: ${{ steps.extract_version_name.outputs.version }} 
+      
