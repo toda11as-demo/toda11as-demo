@@ -20,6 +20,22 @@
 #### 4) 성공적 배포 이후 자동으로 태깅+릴리즈
 > - 버전정보 추출
 
+## How to use
+#### 슬랙 채널에 알림을 보내기 위한 준비
+1) 슬랙 좌측 메뉴 `더보기`에서 `앱`을 선택합니다.
+<img src="https://user-images.githubusercontent.com/54920318/217194470-52c4e186-9204-4ff6-b98f-1b8624167227.png" width="200" height="260">  
+
+2) `incoming webhooks`앱을 추가합니다.  
+
+![image](https://user-images.githubusercontent.com/54920318/217194839-a6956a22-c1d8-45bb-87c6-f74cd202aaf6.png)  
+3) 알림 받을 채널을 선택합니다.
+4) 웹후크 URL을 복사합니다.
+5) 구독할 레포로 이동 > `Settings` > `Secrets and variables` > `Actions`에 들어갑니다.   
+![image](https://user-images.githubusercontent.com/54920318/217195392-1a8e2fe4-8d71-4a1e-ada1-151e8b1b0e92.png)  
+6) `new repository secret`을 클릭하여 다음 정보를 입력하고 등록합니다  
+- Name: SLACK_WEBHOOK_URL
+- Secret: `복사한 웹후크 URL`
+
 ## Contributors
 
 - 소프트웨어학과 김진녕 DivisonOfficer
