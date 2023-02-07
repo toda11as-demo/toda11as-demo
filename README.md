@@ -19,6 +19,7 @@
 > - 슬랙 API(slack-send action)를 이용해 특정 채널에 알림
  
 #### 4) 성공적 배포 이후 자동으로 태깅+릴리즈
+
 > - 버전정보 추출
 
 ## How to use
@@ -44,5 +45,6 @@
 - 소프트웨어학과 정주은 JooEun-Jeong
 
 ## Link
-
 https://github.com/toda11as-demo/toda11as-demo
+
+
