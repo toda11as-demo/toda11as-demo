@@ -1,5 +1,4 @@
-#변경해야 될 부분이 있습니다. ctrl+f로 "변경"을 찾아보세요.
-name: Alert Deploy Status & Release Tag
+name: Auto Deploy & Alert Deploy Status & Release Tag
 
 on:
   pull_request:
@@ -65,7 +64,7 @@ jobs:
 
   alert_deploy_failed:
     if: ${{ failure() }} # 이전의 job이 실패했을 경우 실행됨
-    needs: docker-ssh-deploy # docker job의 이름으로 변경해야됨
+    needs: docker-ssh-deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -98,7 +97,7 @@ jobs:
   alert_deploy_success:
     if: ${{ success() }} # 이전의 job이 성공했을 경우 실행됨
     runs-on: ubuntu-latest
-    needs: docker-ssh-deploy # docker job의 이름으로 변경해야됨
+    needs: docker-ssh-deploy
     steps:
       - uses: actions/checkout@v3
       - name: prepare to get github repo url
@@ -130,7 +129,7 @@ jobs:
   ## below code is from .github/releaseAction.yml and modified
   ## name: Release Tag
   ## only runs when alert_deploy_success job is done
-  build:
+  release_tag:
     runs-on: ubuntu-latest
     permissions: write-all
     needs: alert_deploy_success
