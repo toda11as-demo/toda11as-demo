@@ -51,9 +51,9 @@
    
 5) 구독할 레포로 이동 > `Settings` > `Secrets and variables` > `Actions`에 들어갑니다.   
 <img src="https://user-images.githubusercontent.com/54920318/217195392-1a8e2fe4-8d71-4a1e-ada1-151e8b1b0e92.png" width="70%">
-6) `new repository secret`을 클릭하여 다음 정보를 입력하고 등록합니다  
-- Name: SLACK_WEBHOOK_URL
-- Secret: `복사한 웹후크 URL`  
+
+6) `new repository secret`을 클릭하여 다음 정보를 입력하고 등록합니다.  
+ > - SLACK_WEBHOOK_URL: (복사한 웹후크 URL)
 
 
 ## Contributors
