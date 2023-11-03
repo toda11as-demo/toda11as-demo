@@ -2,7 +2,16 @@ name: Auto Deploy & Alert Deploy Status & Release Tag
 
 on:
   pull_request:
-    types: ['closed']
+    types: ["closed"]
+  workflow_dispatch:
+    inputs:
+      channel_name:
+        description: "The name of slack channel you will get messages: "
+        required: true
+      docker_image_name:
+        description: "docker image name that you defined :"
+        required: true
+        default: "app"
 
 # job is triggered only when PR is closed and merged to the 'main' branch
 jobs:
@@ -16,50 +25,44 @@ jobs:
         id: slack
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          payload: | 
+          payload: |
             {
-              "channel": "#team2_배포상태알림", "username": "Alert Manager", "text": "*===UPDATE ALARM===*", "icon_emoji": ":seal:"
+              "channel": "#${{github.event.inputs.channel_name}}", "username": "Alert Manager", "text": "*===UPDATE ALARM===*", "icon_emoji": ":seal:"
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          
+          SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK_URL}}
+
   docker-ssh-deploy:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
-      -
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v2 
-      -
-        name: Set up Docker Buildx
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      -
-        name: Login to Docker Hub # Docker Hub에 이미지를 업로드하기 위해서 로그인합니다.
+      - name: Login to Docker Hub # Docker Hub에 이미지를 업로드하기 위해서 로그인합니다.
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Build and push # Dockerfile의 내용을 이용해 이미지를 빌드합니다.
+      - name: Build and push # Dockerfile의 내용을 이용해 이미지를 빌드합니다.
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: seunghyeok/app:latest # 현재 도커허브 유저네임과 이미지명이 고정이지만 추후에 바꿀수 있도록 변경할것입니다.
-      - 
-        name: executing remote ssh commands using password # SSH 를 통해 리모트 서버로 접속하고 docker-compose 를 이용해 디플로이하는 스탭입니다.
+          tags: ${{secrets.DOCKERHUB_USERNAME}}/${{github.event.inputs.docker_image_name}}:latest # 현재 도커허브 유저네임과 이미지명이 고정이지만 추후에 바꿀수 있도록 변경할것입니다.
+      - name: executing remote ssh commands using key # SSH 를 통해 리모트 서버로 접속하고 docker-compose 를 이용해 디플로이하는 스탭입니다.
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           script: |
             cd ~
             docker-compose down
-            docker image rm seunghyeok/app:latest
+            docker image rm ${{secrets.DOCKERHUB_USERNAME}}/${{github.event.inputs.docker_image_name}}:latest
             docker-compose up -d
 
   alert_deploy_failed:
@@ -86,13 +89,13 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GITHUB_REPO: ${{ toJson(github) }}
-        run: |  
+        run: |
           GITHUB_REPO_URL_w=$(echo $GITHUB_REPO | jq '.repositoryUrl')
           # "와 git:// 삭제
           GITHUB_REPO_URL=$(echo "${GITHUB_REPO_URL_w:7:-1}")
-          
+
           chmod +x tools/alertFailure.sh
-          tools/alertFailure.sh "$SLACK_WEBHOOK_URL" ${GITHUB_REPO_URL} "${{ steps.pr_info.outputs.pull_request_title }}"
+          tools/alertFailure.sh "$SLACK_WEBHOOK_URL" ${GITHUB_REPO_URL} "${{ steps.pr_info.outputs.pull_request_title }} ${{github.event.inputs.channel_name}}"
 
   alert_deploy_success:
     if: ${{ success() }} # 이전의 job이 성공했을 경우 실행됨
@@ -118,14 +121,14 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GITHUB_REPO: ${{ toJson(github) }}
-        run: |  
+        run: |
           GITHUB_REPO_URL_w=$(echo $GITHUB_REPO | jq '.repositoryUrl')
           # "와 git:// 삭제
           GITHUB_REPO_URL=$(echo "${GITHUB_REPO_URL_w:7:-1}")
 
           chmod +x tools/alertSuccess.sh
-          tools/alertSuccess.sh "$SLACK_WEBHOOK_URL" ${GITHUB_REPO_URL} "${{ steps.pr_info.outputs.pull_request_title }}"
-  
+          tools/alertSuccess.sh "$SLACK_WEBHOOK_URL" ${GITHUB_REPO_URL} "${{ steps.pr_info.outputs.pull_request_title }} ${{github.event.inputs.channel_name}}"
+
   ## below code is from .github/releaseAction.yml and modified
   ## name: Release Tag
   ## only runs when alert_deploy_success job is done
@@ -137,18 +140,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: 버전 정보 추출
-        id: extract_version_name 
-        shell: bash  
+        id: extract_version_name
+        shell: bash
         run: |
           VAR=$(echo '${{ github.event.pull_request.title }}' | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
 
           echo $VAR
           echo "version=${VAR}" >> $GITHUB_OUTPUT
 
-      - name: Release 생성 
+      - name: Release 생성
         uses: actions/create-release@v1
-        env: 
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with: 
-          tag_name: "v${{ steps.extract_version_name.outputs.version }}" 
-          release_name: "v${{ steps.extract_version_name.outputs.version }}" 
+        with:
+          tag_name: "v${{ steps.extract_version_name.outputs.version }}"
+          release_name: "v${{ steps.extract_version_name.outputs.version }}"
+# branding: # 이후 마켓에 등록할 때 로고나 색깔을 지정
+#   icon: 'anchor'
+#   color: 'red'
